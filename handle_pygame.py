@@ -18,9 +18,11 @@ def init_screen(width = WIDTH, height = HEIGHT) :
 
 
 def handle_events():
+    run = True
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            return False
+        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == 27):
+            run = False
+    return run
 
 
 def draw_grid(screen, grid, grid_size):
@@ -35,9 +37,7 @@ def draw_grid(screen, grid, grid_size):
             x2 = x + math.cos(angle) * vector_lenght
             y2 = y + math.sin(angle) * vector_lenght
 
-            pygame.draw.line(screen, (255, 255, 255), (x, y), (x2, y2), 2)
-
-    # pygame.display.update()
+            pygame.draw.line(screen, (100, 100, 100), (x, y), (x2, y2), 2)
 
 
 def get_closest_point_dir(screen, grid, grid_size, x, y) :
@@ -67,29 +67,30 @@ def calculate_angle(screen, grid, grid_size, x, y) :
 
     angle = math.radians(grid[closest_point[0]][closest_point[1]])
 
-    # pygame.draw.line(screen, (255, 0, 255), (x, y), (x + math.cos(angle) * 50, y + math.sin(angle) * 50), 2)
 
     return angle
 
 
-# fonction draw_curve qui prends en parametres un point de depart, trouve le point le plus proche dans la grille, calcule l'angle et se deplace d'une certaine distance dans cet angle, et repete l'operation a partir de la nouvelle position
 def draw_curve(screen, grid, grid_size, x, y, nb_steps, distance) :
     offset = WIDTH / grid_size
     closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
+    r, g, b = [255 * random.random(), 255 * random.random(), 255 * random.random()]
 
     for i in range(nb_steps) :
         angle = math.radians(grid[closest_point[0]][closest_point[1]])
+
         new_x = math.cos(angle) * distance
         new_y = math.sin(angle) * distance
-        pygame.draw.line(screen, (255, 0, 255), (x, y), (x + new_x, y + new_y), 2)
+
+        pygame.draw.line(screen, (255 * angle/5, 100, 100), (x, y), (x + new_x, y + new_y), 2)
 
         x += new_x
         y += new_y
+
         closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
-        pygame.display.update()
+    pygame.display.update()
 
 
 def draw_flow(screen, grid, grid_size, nb_steps, distance) :
-    point = (int(WIDTH * random.random()), int(WIDTH * random.random()))
-
+    point = (int(WIDTH * random.random()), int(HEIGHT * random.random()))
     draw_curve(screen, grid, grid_size, point[0], point[1], nb_steps, distance)
