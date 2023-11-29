@@ -1,10 +1,12 @@
 import pygame
 import math
-import time
 import random
+import threading
+
 
 HEIGHT = 800
 WIDTH  = 800
+
 
 def init_screen(width = WIDTH, height = HEIGHT) :
     pygame.init()
@@ -31,13 +33,17 @@ def draw_grid(screen, grid, grid_size):
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
+
             x = i * offset + offset/2
             y = j * offset + offset/2
+
             angle = math.radians(grid[i][j])
+
             x2 = x + math.cos(angle) * vector_lenght
             y2 = y + math.sin(angle) * vector_lenght
 
-            pygame.draw.line(screen, (100, 100, 100), (x, y), (x2, y2), 2)
+            pygame.draw.circle(screen, (46, 47, 58), (int(x), int(y)), 2)
+            pygame.draw.line(screen, (46, 47, 58), (x, y), (x2, y2), 1)
 
 
 def get_closest_point_dir(screen, grid, grid_size, x, y) :
@@ -54,27 +60,23 @@ def get_closest_point_dir(screen, grid, grid_size, x, y) :
                 min_dist = dist
                 closest_point = (i, j)
 
-    # pygame.draw.circle(screen, (0, 255, 255), (x, y), 5)
-    # pygame.draw.circle(screen, (255, 0, 0), (closest_point[0] * offset + offset/2, closest_point[1] * offset + offset/2), 5)
-    # pygame.display.update()
-
     return closest_point
 
 
 def calculate_angle(screen, grid, grid_size, x, y) :
-    offset = WIDTH / grid_size
     closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
 
     angle = math.radians(grid[closest_point[0]][closest_point[1]])
-
 
     return angle
 
 
 def draw_curve(screen, grid, grid_size, x, y, nb_steps, distance) :
-    offset = WIDTH / grid_size
     closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
-    r, g, b = [255 * random.random(), 255 * random.random(), 255 * random.random()]
+
+    random_value = 70 * random.uniform(-1, 1)
+
+    r, g, b = min(175 + random_value, 255), 0, 0
 
     for i in range(nb_steps) :
         angle = math.radians(grid[closest_point[0]][closest_point[1]])
@@ -82,15 +84,44 @@ def draw_curve(screen, grid, grid_size, x, y, nb_steps, distance) :
         new_x = math.cos(angle) * distance
         new_y = math.sin(angle) * distance
 
-        pygame.draw.line(screen, (255 * angle/5, 100, 100), (x, y), (x + new_x, y + new_y), 2)
+        if x + new_x < 0 or x + new_x > WIDTH or y + new_y < 0 or y + new_y > HEIGHT :
+            break
+
+
+        pygame.draw.line(screen, (r, g, b), (x, y), (x + new_x, y + new_y), 1)
 
         x += new_x
         y += new_y
 
         closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
-    pygame.display.update()
+        pygame.display.update()
 
 
 def draw_flow(screen, grid, grid_size, nb_steps, distance) :
-    point = (int(WIDTH * random.random()), int(HEIGHT * random.random()))
+    side = random.randint(0, 3)
+
+    if side == 0 :
+        point = (int(WIDTH * random.random()), 0)
+
+    elif side == 1 :
+        point = (WIDTH, int(HEIGHT * random.random()))
+
+    elif side == 2 :
+        point = (int(WIDTH * random.random()), HEIGHT)
+
+    elif side == 3 :
+        point = (0, int(HEIGHT * random.random()))
+
     draw_curve(screen, grid, grid_size, point[0], point[1], nb_steps, distance)
+
+
+def draw_flow_thread(screen, grid, grid_size, nb_steps, distance, nb_curves = 10) :
+
+    threads = []
+    for i in range(nb_curves) :
+        t = threading.Thread(target=draw_flow, args=(screen, grid, grid_size, nb_steps, distance))
+        threads.append(t)
+        t.start()
+
+    for t in threads :
+        t.join()
