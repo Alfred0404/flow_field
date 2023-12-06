@@ -71,12 +71,8 @@ def calculate_angle(screen, grid, grid_size, x, y) :
     return angle
 
 
-def draw_curve(screen, grid, grid_size, x, y, nb_steps, distance) :
+def draw_curve(screen, grid, grid_size, x, y, nb_steps, distance, r, g, b) :
     closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
-
-    random_value = 70 * random.uniform(-1, 1)
-
-    r, g, b = min(175 + random_value, 255), 0, 0
 
     for i in range(nb_steps) :
         angle = math.radians(grid[closest_point[0]][closest_point[1]])
@@ -94,7 +90,34 @@ def draw_curve(screen, grid, grid_size, x, y, nb_steps, distance) :
         y += new_y
 
         closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
-        pygame.display.update()
+    pygame.display.update()
+
+
+def draw_curve_inverse(screen, grid, grid_size, x, y, nb_steps, distance, r, g, b) :
+    closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
+
+    for i in range(nb_steps) :
+        angle = math.radians(grid[closest_point[0]][closest_point[1]])
+
+        new_x = math.cos(angle) * distance
+        new_y = math.sin(angle) * distance
+
+        if x + new_x < 0 or x + new_x > WIDTH or y + new_y < 0 or y + new_y > HEIGHT :
+            break
+
+        pygame.draw.line(screen, (r, g, b), (x, y), (x - new_x, y - new_y), 1)
+
+        x -= new_x
+        y -= new_y
+
+        closest_point = get_closest_point_dir(screen, grid, grid_size, x, y)
+    pygame.display.update()
+
+
+def draw_flow_inverse(screen, grid, grid_size, nb_steps, distance) :
+    random_point = (int(WIDTH * random.random()), int(HEIGHT * random.random()))
+
+    draw_curve_inverse(screen, grid, grid_size, random_point[0], random_point[1], nb_steps, distance)
 
 
 def draw_flow(screen, grid, grid_size, nb_steps, distance) :
@@ -125,3 +148,35 @@ def draw_flow_thread(screen, grid, grid_size, nb_steps, distance, nb_curves = 10
 
     for t in threads :
         t.join()
+
+
+def draw_curves_grid_points(screen, grid, grid_size, nb_steps, distance) :
+    offset = WIDTH / grid_size
+    for i in range(len(grid)) :
+        for j in range(len(grid[i])) :
+            draw_curve(screen, grid, grid_size, i * offset + offset/2, j * offset + offset/2, nb_steps, distance)
+
+
+def draw_flow_both_directions(screen, grid, grid_size, nb_steps, distance) :
+
+    random_point = (int(WIDTH * random.random()), int(HEIGHT * random.random()))
+
+    random_value = 70 * random.uniform(-1, 1)
+    r, g, b =  max(0, random_value), min(175 + random_value, 255), max(0, random_value)
+
+    draw_curve(screen, grid, grid_size, random_point[0], random_point[1], nb_steps, distance, r, g, b)
+    draw_curve_inverse(screen, grid, grid_size, random_point[0], random_point[1], nb_steps, distance, r, g, b)
+
+
+def draw_flow_both_directions_grid_points(screen, grid, grid_size, nb_steps, distance) :
+    offset = WIDTH / grid_size
+
+    for i in range(len(grid)) :
+        for j in range(len(grid[i])) :
+            if i % 2 == 0 and j % 2 == 0 :
+                random_value = 70 * random.uniform(-1, 1)
+                r, g, b =  max(0, random_value), min(175 + random_value, 255), max(0, random_value)
+
+                draw_curve(screen, grid, grid_size, i * offset + offset/2, j * offset + offset/2, nb_steps, distance, r, g, b)
+                draw_curve_inverse(screen, grid, grid_size, i * offset + offset/2, j * offset + offset/2, nb_steps, distance, r, g, b)
+    handle_events()
